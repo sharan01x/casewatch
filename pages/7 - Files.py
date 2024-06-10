@@ -12,11 +12,26 @@ def main():
 
     if st.session_state["authentication_status"]:
 
-        existing_files_tab, new_files_tab = st.tabs(["Existing Files", "Upload Files"])
+        new_files_tab, existing_files_tab = st.tabs(["Upload Files", "Existing Files"])
         root_folder = f'casefiles/{st.session_state["username"]}'
         main_folder = f'{root_folder}/main'
         background_folder = f'{root_folder}/background'
 
+        with new_files_tab:
+            st.header("Upload Files")
+            with st.form(key='files_form', clear_on_submit=True, border=1):
+                files = st.file_uploader("Choose files", type=["pdf", "txt"], accept_multiple_files=True, key="files_uploader")
+                file_type = st.radio("Type of file you're uploading", ["Main Case Files", "Background Files"], index=0)
+                if st.form_submit_button("Upload Files"):
+                    with st.spinner("Processing..."):
+                        if file_type == "Main Case Files":
+                            store_files(main_folder, files)
+                            existing_main_files = get_files_in_folder(main_folder)
+                        else:
+                            store_files(background_folder, files)
+                            existing_background_files = get_files_in_folder(background_folder)
+                    st.rerun()  # To refresh the page
+        
         with existing_files_tab:
 
             st.header("Existing Files")
@@ -66,20 +81,6 @@ def main():
                         store_files(background_folder, existing_background_files)
                         st.rerun()  # To refresh the page
 
-        with new_files_tab:
-            st.header("Upload Files")
-            with st.form(key='files_form', clear_on_submit=True, border=1):
-                files = st.file_uploader("Choose files", type=["pdf", "txt"], accept_multiple_files=True, key="files_uploader")
-                file_type = st.radio("Type of file you're uploading", ["Main Case Files", "Background Files"], index=0)
-                if st.form_submit_button("Upload Files"):
-                    with st.spinner("Processing..."):
-                        if file_type == "Main Case Files":
-                            store_files(main_folder, files)
-                            existing_main_files = get_files_in_folder(main_folder)
-                        else:
-                            store_files(background_folder, files)
-                            existing_background_files = get_files_in_folder(background_folder)
-                    st.rerun()  # To refresh the page
     else:
         st.switch_page("pages/2 - Login.py")
     
