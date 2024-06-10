@@ -1,7 +1,7 @@
 import streamlit as st
 
 # Setup the UI
-st.set_page_config(page_title="Case Watch", page_icon="🏛️", layout="wide")
+st.set_page_config(page_title="This v. That", page_icon="🏛️", layout="wide")
 
 # Title
 st.title("This v. That")
