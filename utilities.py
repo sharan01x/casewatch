@@ -19,7 +19,7 @@ from langchain.schema.document import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_chroma import Chroma
-
+from dateutil.parser import parse
 
 
 
@@ -82,7 +82,7 @@ Now, find the cases relevant to the last point being discussed in this conversat
 """
 
 TIMELINE_SYSTEM_PROMPT_TEMPLATE = """
-As a highly competent legal advisor, you understand how important it is to get the timeline of events correct. You assist the user by providing a detailed timeline of events related to the case. You will always return the date of an event and a short event description of what happened on that date. The dates are very likely to be in the 'dd.mm.yyyy' format. You must be careful and provide the timeline only in a chronological order and you will therefore double-check your response before sending it. Send the information as a JSON object called 'timeline' and with 'date' and 'event' as the two key-value pairs. Make sure all the quotes are escaped properly. Always respond only with a JSON object, and absolutely nothing else, not even text saying things like 'Here is the timeline' or anything like that.
+As a highly competent legal advisor, you understand how important it is to get the timeline of events correct. You assist the user by providing a detailed timeline of events related to the case. You will always return the date of an event and a short event description of what happened on that date. The dates are very likely to be in the 'dd.mm.yyyy' format. You must be careful and provide the timeline only in a chronological order and you will therefore double-check your response before sending it. Send the information as a JSON object called 'timeline' and with 'date' and 'event' as the two key-value pairs. Make sure all the quotes are escaped properly. The dates must be formatted in the 'dd mmm yyyy' format when possible. Always respond only with the valid JSON object, and absolutely nothing else.
 """
 
 TIMELINE_PROMPT_TEMPLATE = """
@@ -351,7 +351,7 @@ def get_timeline(vectors_folder, timeline_file, refresh=False):
     with open(timeline_file, 'r') as f:
         existing_dates = json.load(f)
 
-    if refresh:
+    if refresh or existing_dates['timeline'] == []:
         results = db.similarity_search_with_score("Find all the dates of any events mentioned in the documents.", k=25)
         context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
         
@@ -363,21 +363,22 @@ def get_timeline(vectors_folder, timeline_file, refresh=False):
         system_message = SystemMessage(content=system_prompt)
         user_message = HumanMessage(content=prompt)
 
-        response = llm_eco([system_message, user_message]).content
-        print(f"✅ Message: {response}")
+        response = llm_eco([system_message, user_message])
+        print(f"✅ Raw Response: {response}")
+        if isinstance(response, AIMessage):
+            response = response.content.strip()
 
         # Parse the response
-        if isinstance(response, str):
-            try:
-                timeline = json.loads(response)
-            except json.JSONDecodeError:
-                print(f"Error: Cannot parse JSON: {response}")
-                timeline = {}
-        elif isinstance(response, dict):
-            timeline = response
-        else:
-            print(f"Error: Unexpected type {type(response)}")
+        response = response[response.find('{'):response.rfind('}')+1]
+        print(f"✅ Parsed Response: {response}")
+        try:
+            timeline = json.loads(response)
+        except json.JSONDecodeError:
+            print(f"Error: Cannot parse JSON: {response}")
             timeline = {}
+
+        print(f"✅ Timeline: {timeline}")
+            
 
         # Update existing dates
         existing_dates.update(timeline)
@@ -386,11 +387,13 @@ def get_timeline(vectors_folder, timeline_file, refresh=False):
         with open(timeline_file, 'w') as f:
             json.dump(existing_dates, f)
 
-    # Sort the timeline by date
+    
+    # Sort the timeline by date after formatting the date correctly
     timeline_sorted = sorted(existing_dates['timeline'], key=lambda x: parse_date(x['date']))
 
+
     # Create the markdown string
-    timeline_markdown = "\n".join(f"\n**{format_date(item['date'])}**:\n\n {item['event']}" for item in timeline_sorted)
+    timeline_markdown = "\n".join(f"\n**{item['date']}**:\n\n {item['event']}" for item in timeline_sorted)
 
     return timeline_markdown
 
@@ -403,19 +406,12 @@ def parse_date(date_string):
     try:
         return datetime.strptime(date_string, "%d.%m.%Y")
     except ValueError:
-        return datetime.strptime(date_string, "%Y")
+        try:
+            return parse(date_string)
+        except ValueError:
+            print(f"Error: Cannot parse date: {date_string}")
+            return None
 
-
-
-
-
-
-# Create the markdown string
-def format_date(date_string):
-    try:
-        return datetime.strptime(date_string, "%d.%m.%Y").strftime('%d %b %Y')
-    except ValueError:
-        return datetime.strptime(date_string, "%Y").strftime('%Y')
 
 
 
