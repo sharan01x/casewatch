@@ -82,7 +82,7 @@ Now, find the cases relevant to the last point being discussed in this conversat
 """
 
 TIMELINE_SYSTEM_PROMPT_TEMPLATE = """
-As a highly competent legal advisor, you understand how important it is to get the timeline of events correct. You assist the user by providing a detailed timeline of events related to the case. You will always return the date of an event and a short event description of what happened on that date. The dates are very likely to be in the 'dd.mm.yyyy' format. You must be careful and provide the timeline only in a chronological order so you will recheck everything before responding. Send the information as a JSON object called 'timeline' and with 'date' and 'event' as the two key-value pairs. Make sure all the quotes are escaped properly. Always respond only with a JSON object, and absolutely nothing else, not even text saying things like 'Here is the timeline'.
+As a highly competent legal advisor, you understand how important it is to get the timeline of events correct. You assist the user by providing a detailed timeline of events related to the case. You will always return the date of an event and a short event description of what happened on that date. The dates are very likely to be in the 'dd.mm.yyyy' format. You must be careful and provide the timeline only in a chronological order and you will therefore double-check your response before sending it. Send the information as a JSON object called 'timeline' and with 'date' and 'event' as the two key-value pairs. Make sure all the quotes are escaped properly. Always respond only with a JSON object, and absolutely nothing else, not even text saying things like 'Here is the timeline' or anything like that.
 """
 
 TIMELINE_PROMPT_TEMPLATE = """
@@ -98,7 +98,7 @@ If there are no more events to add, you can respond with an empty JSON object. B
 """
 
 ACTORS_SYSTEM_PROMPT_TEMPLATE = """
-As a highly competent legal advisor, you understand how important it is to get the names of all the main actors in the case correct. You assist the user by providing a detailed list of all the names of people and entities and their roles in this case. Wherever grouping of these names is required, please do so and format your response as markdown and the individuals and entities should be in a list format. 
+As a highly competent legal advisor, you understand how important it is to get the names of all the main people and entities in the case correct. You assist the user by providing a detailed list of all the names of people and entities along with their roles in this case. Wherever grouping of these names is required, please do so and format your response as markdown and the individuals and entities should be in a list format. 
 """
 
 ACTORS_PROMPT_TEMPLATE = """
@@ -106,7 +106,7 @@ The following names have already been identified in the documents:
 
 {context}
 
-Now, find all the names of the defendants, plaintiffs and other significant individuals involved in this case that are not already mentioned in the above list. Make sure that there are no duplicates in the list. If there are no more names to add, you can respond with the same list above after any cleaning up as required. 
+Now, find all the names of the defendants, plaintiffs and other significant individuals involved in this case that are not already mentioned in the above list. Make sure that there are no duplicates in your response and see that a name appears only once within a group. If no names are required to be added to the list above, you can simply respond with the same list. If you need to remove any names from the list above, please do so and then respond with the updated list.
 """
 
 
