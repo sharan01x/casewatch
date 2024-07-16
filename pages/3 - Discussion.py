@@ -12,17 +12,33 @@ def main():
 
         root_folder = f'casefiles/{st.session_state["username"]}'
 
-         # Get information necessary to get started
-        case_number, which_side, party_names = get_case_details(root_folder)
-        print(f"Case Number: {case_number}, Which Side: {which_side}, Party Names: {party_names}")
+        # Get the active case number from the JSON file
+        st.session_state.case_number = get_active_case(f'{root_folder}')
 
-        if case_number is None:
-            st.warning("No details of the case present. Please provide the case details in the sidebar to get started.")
-            return
-        else:
+
+        with st.sidebar:
+            
+            case_numbers = get_case_numbers(root_folder)
+            # Display the selectbox only if there are case numbers
+            if len(case_numbers) > 0 and st.session_state.case_number in case_numbers:
+                st.session_state.case_number = st.selectbox("Case Number:", case_numbers, index=0 if 'case_number' not in st.session_state else case_numbers.index(st.session_state.case_number))
+
+                # If the value of the selectbox changes, call the set_active_case function to update it in the JSON file
+                if 'case_number' in st.session_state:
+                    set_active_case(root_folder, st.session_state.case_number)
+        
+
+        if st.session_state.case_number is not None:
+            
+            # A case number has been selected, but check if the other details are present, if not get them
+            if 'which_side' not in st.session_state or 'party_names' not in st.session_state or 'timeline' not in st.session_state or 'actors' not in st.session_state or 'files' not in st.session_state:
+                # Get information necessary about the specific case
+                case_number, which_side, party_names, timeline, actors, files, focus = get_case_details(root_folder, st.session_state.case_number)
+                
+                print(f"Case Number: {case_number} | Side: {which_side} | Parties: {party_names} | Timeline: {timeline} | Actors: {actors} | Files: {files} | Focus: {focus}")
 
             # Get the latest file list
-            existing_main_files = get_files_in_folder(f'{root_folder}/main')
+            existing_main_files = get_files(root_folder)
 
             if existing_main_files is None or len(existing_main_files) == 0:
                 st.info("In order for me to start helping you with this case, please upload some case files in the Files section.")
@@ -68,7 +84,7 @@ def main():
                     
                     # Generate response using conversation chains
                     try:
-                        response = get_response(f'{root_folder}/vectors', user_query, which_side, party_names)
+                        response = get_response(f'{root_folder}/{case_number}/vectors', user_query, which_side, party_names)
                         print(f"✅ Response: {response}")
 
                         # Append the response to chat history
@@ -85,6 +101,11 @@ def main():
 
                     # Remove the "processing" message
                     processing_message.empty()
+        
+        else:
+            st.warning("No details of the case is on file. Please provide the necessary information by choosing Case Details in the sidebar to get started.")
+            if st.button("Go to Case Details"):
+                st.switch_page("pages/6 - Case Details.py")
 
     else:
         st.switch_page("pages/2 - Login.py")

@@ -12,32 +12,41 @@ def main():
 
     if st.session_state["authentication_status"]:
 
-        new_files_tab, existing_files_tab = st.tabs(["Upload Files", "Existing Files"])
         root_folder = f'casefiles/{st.session_state["username"]}'
-        main_folder = f'{root_folder}/main'
-        background_folder = f'{root_folder}/background'
 
-        with new_files_tab:
-            st.header("Upload Files")
-            with st.form(key='files_form', clear_on_submit=True, border=1):
-                files = st.file_uploader("Choose files", type=["pdf", "txt"], accept_multiple_files=True, key="files_uploader")
-                file_type = st.radio("Type of file you're uploading", ["Main Case Files", "Background Files"], index=0)
-                if st.form_submit_button("Upload Files"):
-                    with st.spinner("Processing..."):
-                        if file_type == "Main Case Files":
-                            store_files(main_folder, files)
-                            existing_main_files = get_files_in_folder(main_folder)
-                        else:
-                            store_files(background_folder, files)
-                            existing_background_files = get_files_in_folder(background_folder)
-                    st.rerun()  # To refresh the page
-        
-        with existing_files_tab:
+        # Get the active case number from the JSON file
+        st.session_state.case_number = get_active_case(f'{root_folder}')
 
-            st.header("Existing Files")
-            with st.expander("Main Case Files", expanded=True):
+        if st.session_state.case_number is not None:
+
+            with st.sidebar:
+                case_numbers = get_case_numbers(root_folder)
+                # Display the selectbox only if there are case numbers
+                if len(case_numbers) > 0 and st.session_state.case_number in case_numbers:
+                    st.session_state.case_number = st.selectbox("Case Number:", case_numbers, index=0 if 'case_number' not in st.session_state else case_numbers.index(st.session_state.case_number))
+
+                    # If the value of the selectbox changes, call the set_active_case function to update it in the JSON file
+                    if 'case_number' in st.session_state:
+                        set_active_case(root_folder, st.session_state.case_number)
+
+            st.header("File Management")
+            existing_files, upload_files = st.tabs(["Existing Files", "Upload New Files"])
+
+            with upload_files:
+                st.write("Please add more files associated with this case below:")
+                with st.form(key='files_form', clear_on_submit=True, border=1):
+                    files = st.file_uploader("Choose files", type=["pdf", "txt"], accept_multiple_files=True, key="files_uploader")
+                    if st.form_submit_button("Upload Files"):
+                        with st.spinner("Processing..."):
+                            store_files(root_folder, files)
+                            existing_main_files = get_files(root_folder)
+                        st.rerun()  # To refresh the page
+                
+            with existing_files:    
+                st.write("The following files are associated with this case:")
                 # Get the latest file list
-                existing_main_files = get_files_in_folder(main_folder)
+                existing_main_files = get_files(root_folder)
+                
                 if len(existing_main_files) == 0:
                     st.warning("No files uploaded yet", icon='⚠')
                 else:
@@ -47,39 +56,16 @@ def main():
                             col1, col2 = st.columns([4, 1])
                             if col1.checkbox(file, key='main' + file):
                                 selected_files.append(file)
-                    if st.button('Delete Files', key="delete_main"):
-                        for file in selected_files:
-                            try:
-                                os.remove(f'{main_folder}/{file}')
-                                st.success("Deleted")
-                            except FileNotFoundError:
-                                st.error("Unable to delete")
-                        existing_main_files = get_files_in_folder(main_folder)
-                        store_files(main_folder, existing_main_files)
+                    if st.button('🗑️ Delete Files', key="delete_main"):
+                        with st.spinner("Deleting..."):
+                            delete_files(root_folder, selected_files)
+                        existing_main_files = get_files(root_folder)
                         st.rerun()  # To refresh the page
-            
-            with st.expander("Background Files"):
-                # Get the latest file list
-                existing_background_files = get_files_in_folder(background_folder)
-                if len(existing_background_files) == 0:
-                    st.warning("No files uploaded yet", icon='⚠')
-                else:
-                    selected_files = []
-                    for file in existing_background_files:
-                        with st.container():
-                            col1, col2 = st.columns([4, 1])
-                            if col1.checkbox(file, key='background' + file):
-                                selected_files.append(file)
-                    if st.button('Delete Files', key="delete_background"):
-                        for file in selected_files:
-                            try:
-                                os.remove(f'{background_folder}/{file}')
-                                st.success("Deleted")
-                            except FileNotFoundError:
-                                st.error("Unable to delete")
-                        existing_background_files = get_files_in_folder(background_folder)
-                        store_files(background_folder, existing_background_files)
-                        st.rerun()  # To refresh the page
+        else:
+            # No case number found in the JSON file, redirect to the Case Details page
+            st.warning("No details of the case is on file. Please provide the necessary information by choosing Case Details in the sidebar to get started.")
+            if st.button("Go to Case Details"):
+                st.switch_page("pages/6 - Case Details.py")
 
     else:
         st.switch_page("pages/2 - Login.py")

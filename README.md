@@ -4,7 +4,7 @@ V1 of the case tracker tool
 Future improvements:
 
 ~~1. Add basic authentication~~
-2. Add the ability to manage multiple cases
+~~2. Add the ability to manage multiple cases~~
 3. Add the ability to link to case laws on different websites
 4. Store and bring back chat history on demand
 5. Download timelines as a file for printing
@@ -23,3 +23,4 @@ Future improvements:
 18. Better memory management
 19. Create a self-registration mechanism
 20. Allow a user to add facts to the case files as well
+21. Create a view-only access where someone can be invited to participate without doing any of the file-management and other work
