@@ -31,160 +31,9 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 EMBEDDINGS_MODEL = os.getenv("EMBEDDINGS_MODEL")
 USER_CONFIG_FILE = os.getenv("USER_CONFIG_FILE")
 
-QUERY_SYSTEM_PROMPT_TEMPLATE = """As a highly competent legal advisor with extensive knowledge of Indian law, your task is to assist the user by answering questions related to a specific legal suit. You will act as part of {party}'s legal team, who is the {side} in this case. Your role involves not only answering the immediate question asked by the user but also performing thorough research into relevant laws and precedents that pertain to the question.
-
-Your approach should be systematic:
-
-1. Clearly understand the user's question.
-2. Break down the question into necessary components.
-3. Conduct research to identify relevant legal statutes, case laws, or principles.
-4. Provide a direct and concise response to the user's question.
-5. Follow up with additional context or detailed explanations as necessary.
-5. If there are any unsubstantiated points made by the opposing side, mention them briefly to highlight weaknesses in their arguments.
-
-Use Markdown to format your response effectively:
-
-- Utilize headers (e.g., ##, ###) to organize different sections (e.g., Direct Answer, Legal Context, Additional Insights, Opposing Side's Weak Points).
-- Apply bullet points or numbered lists for clarity.
-- Italicize or bold key terms for emphasis."""
-
-QUERY_PROMPT_TEMPLATE="""The user's current question is as follows:
----
-{question}
----
-
-The following excerpts from the case documents are relevant to the user's question:
----
-{context}
----
-
-Now, based on the above information, answer the user's question comprehensively."""
-
-OPPOSITIONS_ARGUMENTS_SYSTEM_PROMPT_TEMPLATE = """As a highly competent legal advisor with extensive knowledge of Indian law, your role is to assist the user (who is {party} and the {side} in this case), by simulating the perspective of the opposition's legal team. This involves crafting potential counterarguments against the latest point discussed in the conversation. By understanding the arguments that the opposition could make, you strengthen the user's preparation and strategy for the case.
-
-Your approach should involve:
-
-1. Reviewing the latest point discussed.
-2. Researching similar and relevant cases to identify possible counterarguments.
-3. Listing the headings of these counterarguments.
-4. Providing a brief but clear description of each argument to ensure the user easily understands the opposition’s potential stance.
-
-Ensure your response is structured and formatted effectively using Markdown:
-
-- Use headers (e.g., ##, ###) for each counterargument to separate them.
-- Include brief descriptions under each header.
-- Keep your explanations concise and focused on clarity."""
-
-OPPOSITIONS_ARGUMENTS_PROMPT_TEMPLATE = """
-For your reference, here is the conversation with the user so far:
----
-{chat_history}
----
-Now, proceed with the research and present the potential counterarguments from the opposition's perspective."""
-
-
-CASE_LAWS_SYSTEM_PROMPT_TEMPLATE = """As a highly competent legal advisor with extensive knowledge of Indian law, your role is to assist the user by answering questions related to a legal suit. You will act as part of {party}'s legal team, who is the {side} in this case. You understand that legal precedents are pivotal not only for predicting the likely outcome of the case but also for devising the most effective strategy to win arguments.
-
-Your task involves:
-
-1. Identifying cases similar to the one at hand, based on the underlying matter, relevant sections of law, or other comparable legal principles.
-2. Listing the names of these cases.
-3. Providing a brief sentence for each case that explains its similarity to the current case.
-
-Ensure your response is well-organized and formatted using Markdown:
-
-- Use headers (e.g., ##, ###) to separate the various cases.
-- Include case names and brief descriptions clearly and concisely.
-"""
-
-CASE_LAWS_PROMPT_TEMPLATE = """Here is the context of your conversation with the user so far for reference:
---- 
-{chat_history}
----
-Now, identify and list the cases relevant to the last point being discussed in this conversation."""
-
-
-
-TIMELINE_SYSTEM_PROMPT_TEMPLATE = """
-As a highly competent legal advisor, you recognize the critical importance of accurately detailing the timeline of events for a case. You are tasked with assisting the user by providing a detailed and precise timeline of events related to the case. Each entry in the timeline must include the date of the event and a brief description of what happened on that date.
-
-Key criteria for your response:
-
-1. Date Format: Ensure dates are in the 'dd mmm yyyy' format (e.g., '25 Jan 2023').
-2. Chronological Order: Events must be strictly in chronological order.
-3. JSON Format: Return the information as a JSON object named 'timeline' with 'date' and 'event' as the key-value pairs. Ensure all quotes are properly escaped.
-4. Double-Checking: Verify the timeline for any errors and remove duplicated events before submission.
-
-Here is the format you should follow:
-
-{{
-    "timeline": [
-        {{
-            "date": "date_1",
-            "event": "event_1"
-        }},
-        {{
-            "date": "date_2",
-            "event": "event_2"
-        }}
-        // Add more entries as needed
-    ]
-}}
-
-
-Or, if there are no other events to include outside of those specified in the list above, return an empty JSON object like this:
-
-{{
-    "timeline": []
-}}
-
-Remember, respond only with the valid JSON object.
-"""
-
-TIMELINE_PROMPT_TEMPLATE = """
-For context, the following are some of the events that took place as per the documents provided:
-
----
-{context}
----
-
-Now, compile all the identified dates and corresponding events, excluding those from the list below:
-
----
-{exclude_events}
----
-
-Ensure your response includes only the valid JSON object and absolutely nothing else.
-"""
-
-
-ACTORS_SYSTEM_PROMPT_TEMPLATE = """As a highly competent legal advisor, you know the importance of correctly identifying all main people and entities involved in a legal case. Your task is to assist the user by providing a detailed and organized list of all names of persons and entities associated with this case, along with their respective roles.
-
-Your approach should include:
-
-1. Reviewing the existing list of names and roles provided.
-2. Identifying additional names of defendants, plaintiffs, and other significant individuals or entities not already mentioned.
-3. Grouping names appropriately (e.g., by role such as defendants, plaintiffs, witnesses, etc.).
-4. Ensuring no duplicates within each group and that each name appears only once.
-5. Correcting or removing any inaccuracies from the provided list if necessary.
-
-Your response should be formatted in Markdown. Use a list format to present the individuals and entities clearly.
-"""
-
-ACTORS_PROMPT_TEMPLATE = """
-Here are the names already identified in the documents for your reference:
-
----
-{context}
----
-
-Now, find and add the names of any additional defendants, plaintiffs, and other significant individuals involved in this case that are not listed above. Ensure there are no duplicates and the list is accurate. If no new names need to be added, you can simply respond with the current list. If any names need to be removed, make the necessary corrections and provide the updated list.
-"""
-
-
 # For main operations
 llm = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model_name="gpt-4o", temperature=0.3)
-llm_eco = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model_name="gpt-4o", temperature=0.3) #Change this to something else in the future, but for now gpt-3.5-turbo is not providing the best answers
+llm_eco = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model_name="gpt-4o-mini", temperature=0.3) #Change this to something else in the future, but for now gpt-3.5-turbo is not providing the best answers
 embeddings = OpenAIEmbeddings(model=EMBEDDINGS_MODEL, api_key=OPENAI_API_KEY)
 vector_store = None
 
@@ -193,6 +42,10 @@ vector_store = None
 chat_history = ChatMessageHistory()
 
 # SUPPORTING FUNCTIONS ////////////////////////
+
+
+
+
 
 def verify_authentication():
     # Authentication
@@ -211,6 +64,9 @@ def verify_authentication():
 
 
 
+
+
+
 # Write the user configuration to a file
 def update_user_config_file(config):
     try:
@@ -219,6 +75,7 @@ def update_user_config_file(config):
             print(f"✅ User configuration file updated")
     except Exception as e:
         raise Exception(f"Error updating user configuration file: {e}")
+
 
 
 
@@ -505,6 +362,8 @@ def store_files(root_folder, files):
 
 
 
+
+
 # Delete files
 def delete_files(root_folder, files):
     # Read the JSON file
@@ -691,6 +550,57 @@ def calculate_chunk_ids(chunks):
 
 
 
+TIMELINE_SYSTEM_PROMPT_TEMPLATE = """
+As a highly competent legal advisor, you recognize the critical importance of accurately detailing the timeline of events for a case. You are tasked with assisting the user by providing a detailed and precise timeline of events related to the case. Each entry in the timeline must include the date of the event and a brief description of what happened on that date.
+
+Key criteria for your response:
+
+1. Date Format: Ensure dates are in the 'dd mmm yyyy' format (e.g., '25 Jan 2023').
+2. Chronological Order: Events must be strictly in chronological order.
+3. JSON Format: Return the information as a JSON object named 'timeline' with 'date' and 'event' as the key-value pairs. Ensure all quotes are properly escaped.
+4. Double-Checking: Verify the timeline for any errors and remove duplicated events before submission.
+
+Here is the format you should follow:
+
+{{
+    "timeline": [
+        {{
+            "date": "date_1",
+            "event": "event_1"
+        }},
+        {{
+            "date": "date_2",
+            "event": "event_2"
+        }}
+        // Add more entries as needed
+    ]
+}}
+
+
+Or, if there are no other events to include outside of those specified in the list above, return an empty JSON object like this:
+
+{{
+    "timeline": []
+}}
+
+Remember, respond only with the valid JSON object.
+"""
+
+TIMELINE_PROMPT_TEMPLATE = """
+For context, the following are some of the events that took place as per the documents provided:
+
+---
+{context}
+---
+
+Now, compile all the identified dates and corresponding events, excluding those from the list below:
+
+---
+{exclude_events}
+---
+
+Ensure your response includes only the valid JSON object and absolutely nothing else.
+"""
 
 def get_timeline(root_folder, refresh=False):
 
@@ -809,6 +719,7 @@ def parse_date(date_string):
 
 
 
+
 def delete_timeline(root_folder):
     # Read the case_details JSON file
     # Get the active case number
@@ -835,6 +746,29 @@ def delete_timeline(root_folder):
 
 
 
+
+ACTORS_SYSTEM_PROMPT_TEMPLATE = """As a highly competent legal advisor, you know the importance of correctly identifying all main people and entities involved in a legal case. Your task is to assist the user by providing a detailed and organized list of all names of persons and entities associated with this case, along with their respective roles.
+
+Your approach should include:
+
+1. Reviewing the existing list of names and roles provided.
+2. Identifying additional names of defendants, plaintiffs, and other significant individuals or entities not already mentioned.
+3. Grouping names appropriately (e.g., by role such as defendants, plaintiffs, witnesses, etc.).
+4. Ensuring no duplicates within each group and that each name appears only once.
+5. Correcting or removing any inaccuracies from the provided list if necessary.
+
+Your response should be formatted in Markdown. Use a list format to present the individuals and entities clearly.
+"""
+
+ACTORS_PROMPT_TEMPLATE = """
+Here are the names already identified in the documents for your reference:
+
+---
+{context}
+---
+
+Now, find and add the names of any additional defendants, plaintiffs, and other significant individuals involved in this case that are not listed above. Ensure there are no duplicates and the list is accurate. If no new names need to be added, you can simply respond with the current list. If any names need to be removed, make the necessary corrections and provide the updated list.
+"""
 
 def get_actors(root_folder, refresh=False):
     
@@ -882,10 +816,6 @@ def get_actors(root_folder, refresh=False):
 
     return actors
 
-    
-
-    
-    
 
 
 
@@ -918,7 +848,32 @@ def delete_actors(root_folder):
 
 
 
+QUERY_SYSTEM_PROMPT_TEMPLATE = """As a highly competent legal advisor with extensive knowledge of Indian law, your task is to assist the user by answering questions related to a specific legal suit. You will act as part of {party}'s legal team, who is the {side} in this case. Your role involves not only answering the immediate question asked by the user but also performing thorough research into relevant laws and precedents that pertain to the question.
 
+Your approach should be systematic:
+
+1. Clearly understand the user's question.
+2. Break down the question into necessary components.
+3. Conduct research to identify relevant legal statutes, case laws, or principles.
+4. Provide a direct and concise response to the user's question.
+
+Use Markdown to format your response effectively:
+
+- Organize different sections (e.g., Direct Answer and Additional Details) of the answer using bold fonts and uppercase letters.
+- Apply bullet points or numbered lists for clarity.
+- Use italics and bold formatting for key terms and for emphasis."""
+
+QUERY_PROMPT_TEMPLATE="""The user's current question is as follows:
+---
+{question}
+---
+
+The following excerpts from the case documents are relevant to the user's question:
+---
+{context}
+---
+
+Now, based on the above information, answer the user's question."""
 
 def get_response(vectors_folder, user_query, which_side, party_names):
     # Function to perform RAG (Retrieval-Augmented Generation)
@@ -944,103 +899,202 @@ def get_response(vectors_folder, user_query, which_side, party_names):
         side=which_side
     )
 
-    # Generate the response using the LLM
+    # Format the user and system messages as objects
     system_message = SystemMessage(content=system_template)
     user_message = HumanMessage(content=full_prompt)
-
-    # Add the system and user messages to the chat history
-    chat_history.add_message(system_message)
-    chat_history.add_message(user_message)
 
     # Use the correct method to call the LLM
     response = llm([system_message, user_message])
 
     # The response from llm should be an AIMessage object
     if isinstance(response, AIMessage):
-        response_content = response.content.strip()
+        return response
     else:
         raise Exception(f"Unexpected response type: {type(response)}")
 
-    # Add the AI's response to the chat history
-    chat_history.add_message(AIMessage(content=response_content))
-    
-
-    return AIMessage(content=response_content)
 
 
 
 
 
+CASE_LAWS_SYSTEM_PROMPT_TEMPLATE = """As a highly competent legal advisor with extensive knowledge of Indian law, your role is to assist the user by answering questions related to a legal suit. You will act as part of {party}'s legal team, who is the {side} in this case. You understand that legal precedents are pivotal not only for predicting the likely outcome of the case but also for devising the most effective strategy to win arguments.
 
+Your task involves:
 
-def get_case_laws(which_side, party_names):
+1. Identifying cases similar to the one at hand, based on the underlying matter, relevant sections of law, or other comparable legal principles.
+2. Listing the names of these cases.
+3. Providing a brief sentence for each case that explains its similarity to the current case.
+
+Ensure your response is well-organized and formatted using Markdown:
+
+- Organize different sections (e.g., Direct Answer and Additional Details) of the answer using bold fonts and uppercase letters.
+- Include case names and brief descriptions clearly and concisely.
+"""
+
+CASE_LAWS_PROMPT_TEMPLATE = """Here is the context of your conversation with the user so far for reference:
+--- 
+{chat_history}
+---
+Now, identify and list the cases relevant to the last point being discussed in this conversation."""
+
+def get_case_laws(which_side, party_names, messages, index):
     # Function to look up case laws based on the last point discussed in the conversation
+
+    # Start iterating backwards from the index position and find the user's last question
+    for i in range(index, -1, -1):
+        if isinstance(messages[i], HumanMessage):
+            start_index = i
+            break
+    
+    # Build the chat history from the start_index to the index
+    chat_history = "\n\n".join([msg.content for msg in messages[start_index:index+1]])
+    
 
     # Formulate the case law query prompt
     system_template = PromptTemplate.from_template(CASE_LAWS_SYSTEM_PROMPT_TEMPLATE)
     user_template = PromptTemplate.from_template(CASE_LAWS_PROMPT_TEMPLATE)
     
     system_prompt = system_template.format(party=party_names, side=which_side)
-    user_prompt = user_template.format(chat_history=st.session_state.messages)
+    user_prompt = user_template.format(chat_history=chat_history)
 
-    print(f"✅ Case Law Prompt: {user_prompt}")
+    print(f"✅ Case Law Prompts: {system_prompt} \n\n {user_prompt}")
 
     system_message = SystemMessage(content=system_prompt)
     user_message = HumanMessage(content=user_prompt)
-    
-    # Add the system and user messages to the chat history
-    chat_history.add_message(system_message)
-    chat_history.add_message(user_message)
 
     # Use the correct method to call the LLM
     response = llm([system_message, user_message])
 
     # The response from llm should be an AIMessage object
     if isinstance(response, AIMessage):
-        response_content = response.content.strip()
+        return response
     else:
         raise Exception(f"Unexpected response type: {type(response)}")
+
+
+
+
+
+OPPOSITIONS_ARGUMENTS_SYSTEM_PROMPT_TEMPLATE = """As a highly competent legal advisor with extensive knowledge of Indian law, your role is to assist the user (who is {party} and the {side} in this case), by simulating the perspective of the opposition's legal team. This involves crafting potential counterarguments against the latest point discussed in the conversation. By understanding the arguments that the opposition could make, you strengthen the user's preparation and strategy for the case.
+
+Your approach should involve:
+
+1. Reviewing the latest point discussed.
+2. Researching similar and relevant cases to identify possible counterarguments.
+3. Listing the headings of these counterarguments.
+4. Providing a brief but clear description of each argument to ensure the user easily understands the opposition's potential stance.
+
+Ensure your response is structured and formatted effectively using Markdown:
+
+- Organize different sections (e.g., Direct Answer and Additional Details) of the answer using bold fonts and uppercase letters.
+- Include brief descriptions under each header.
+- Keep your explanations concise and focused on clarity."""
+
+OPPOSITIONS_ARGUMENTS_PROMPT_TEMPLATE = """
+For your reference, here is the conversation with the user so far:
+---
+{chat_history}
+---
+Now, proceed with the research and present the potential counterarguments from the opposition's perspective."""
+
+def get_opposition_arguments(which_side, party_names, messages, index):
+    # Function the generate potential counterarguments from the opposition's perspective
+
+     # Start iterating backwards from the index position and find the user's last question
+    for i in range(index, -1, -1):
+        if isinstance(messages[i], HumanMessage):
+            start_index = i
+            break
     
-    # Add the AI's response to the chat history
-    chat_history.add_message(AIMessage(content=response_content))
-
-    return AIMessage(content=response_content)
-
-
-
-
-
-
-
-def get_opposition_arguments(which_side, party_names):
-    # Function to look up case laws based on the last point discussed in the conversation
+    # Build the chat history from the start_index to the index
+    chat_history = "\n\n".join([msg.content for msg in messages[start_index:index+1]])
 
     # Formulate the case law query prompt
     system_template = PromptTemplate.from_template(OPPOSITIONS_ARGUMENTS_SYSTEM_PROMPT_TEMPLATE)
     user_template = PromptTemplate.from_template(OPPOSITIONS_ARGUMENTS_PROMPT_TEMPLATE)
     
     system_prompt = system_template.format(party=party_names, side=which_side)
-    user_prompt = user_template.format(chat_history=st.session_state.messages)
+    user_prompt = user_template.format(chat_history=chat_history)
 
     print(f"✅ Opposition Research Prompt: {user_prompt}")
 
     system_message = SystemMessage(content=system_prompt)
     user_message = HumanMessage(content=user_prompt)
-    
-    # Add the system and user messages to the chat history
-    chat_history.add_message(system_message)
-    chat_history.add_message(user_message)
 
     # Use the correct method to call the LLM
     response = llm([system_message, user_message])
 
     # The response from llm should be an AIMessage object
     if isinstance(response, AIMessage):
-        response_content = response.content.strip()
+        return response
     else:
         raise Exception(f"Unexpected response type: {type(response)}")
-    
-    # Add the AI's response to the chat history
-    chat_history.add_message(AIMessage(content=response_content))
 
-    return AIMessage(content=response_content)
+
+
+
+DOCUMENT_REFERENNCES_PROMPT_TEMPLATE = """As a legal advisor with a keen eye for detail, your role is to assist the user develop a list of references which were relevant to the user's last query. Go through the document excepts and identify the most pertinent references that could be useful in answering the user's last query.
+
+Your approach should be:
+
+1. Reviewing the user's last query.
+2. Scanning the document excerpts to find relevant references.
+3. Listing the exact file name and extension of the document, page numbers and a brief excerpt of the content that is up to 200 characters long.
+4. Formatting the response in a clear and organized manner using Markdown.
+
+The user's last query was:
+___
+{user_query}
+___
+
+The relevant document excerpts are:
+___
+{document_excerpts}
+___
+
+Now, compile the list of document references that could be useful to the user.
+"""
+
+def get_document_references(vectors_folder, messages, index):
+    #Function to get the document references from the list of files we have in the case
+
+    # Find the last user message before the current index
+    for j in range(index, -1, -1):
+        if isinstance(messages[j], HumanMessage):
+            user_query = messages[j].content
+            break
+    
+    # Load the vector store
+    db = Chroma(persist_directory=vectors_folder, embedding_function=embeddings)
+
+    # Search for the relevant documents
+    results = db.similarity_search_with_score(user_query, k=10)
+
+    # Iterate through the results and create a list of document references with the file numbers, page numbers, and excerpts
+    document_excerpts = ""
+    for doc, score in results:
+        file_name = os.path.basename(doc.metadata.get("source"))
+        page_number = doc.metadata.get("page")
+        excerpt = doc.page_content[:200]
+        document_excerpts += f"\n\n---\n\n File Name: {file_name} \n Page Number: {page_number}) \n Excerpt:{excerpt}...\n\n---\n\n"
+    
+    # Format the prompts
+    user_template = ChatPromptTemplate.from_template(DOCUMENT_REFERENNCES_PROMPT_TEMPLATE)
+    user_prompt = user_template.format(user_query=user_query, document_excerpts=document_excerpts) 
+
+    # Ask the llm model to generate the response
+    user_message = HumanMessage(content=user_prompt)
+    response = llm_eco([user_message])
+
+    if isinstance(response, AIMessage):
+        return response
+    else:
+        raise Exception(f"Unexpected response type: {type(response)}")
+
+
+
+
+def get_additional_context(message):
+    # Function that will find additional details of the legal point provided as an answer to the user's previous question
+
+    return True

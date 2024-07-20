@@ -24,3 +24,9 @@ Future improvements:
 19. Create a self-registration mechanism
 20. Allow a user to add facts to the case files as well
 21. Create a view-only access where someone can be invited to participate without doing any of the file-management and other work
+22. Allow the ability to remove people from the people list
+23. Make the people list editable
+24. Remove elements from the timeline
+25. Make the timeline editable
+~~26.List relevant references for the answers found~~
+

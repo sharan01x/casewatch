@@ -54,15 +54,29 @@ def main():
                             with st.chat_message("AI"):
                                 st.markdown(message.content)
 
-                                with st.expander("Follow-up:", expanded=False):
-                                    if st.button("Case Laws", key=f"case_laws_{i}", help="Get the case laws related to this point"):
-                                        case_laws = get_case_laws(which_side, party_names)
-                                        st.session_state.messages.append(case_laws)
-                                    if st.button("Opposing Arguments", key=f"opposing_{i}", help="Get what the opposition could argue regarding this point"):
-                                        opposition_arguments = get_opposition_arguments(which_side, party_names)
-                                        st.session_state.messages.append(opposition_arguments)
-                                    if st.button("Unsubstantiated Points", key=f"unsubstantiated_{i}", help="Get the points that haven't been proven yet regarding this point"):
-                                        pass
+                                with st.expander("Follow-up:", expanded=True):
+                                    #Create a column layout and layout the buttons
+                                    col1, col2, col3, col4 = st.columns(4)
+
+                                    with col1:
+                                        if st.button("Explain Further", key=f"context_{i}", help="Get more context regarding this point"):
+                                            additional_context = get_additional_context(st.session_state.messages, i)
+                                            st.session_state.messages.append(additional_context)
+                                    
+                                    with col2:
+                                        if st.button("Find Similar Cases", key=f"case_laws_{i}", help="Get the cases related to this point"):
+                                            case_laws = get_case_laws(which_side, party_names, st.session_state.messages, i)
+                                            st.session_state.messages.append(case_laws)
+                                    
+                                    with col3:
+                                        if st.button("List References", key=f"arguments_{i}", help="Get the documents that are referenced by this point"):
+                                            document_references = get_document_references(f'{root_folder}/{case_number}/vectors', st.session_state.messages, i)
+                                            st.session_state.messages.append(document_references)
+                                    
+                                    with col4:
+                                        if st.button("Make Arguments", key=f"opposing_{i}", help="Understand what the opposition may argue regarding this point"):
+                                            opposition_arguments = get_opposition_arguments(which_side, party_names, st.session_state.messages, i)
+                                            st.session_state.messages.append(opposition_arguments)
 
                         elif isinstance(message, HumanMessage):
                             with st.chat_message("Human"):
@@ -74,27 +88,19 @@ def main():
                 if user_query:
                     # Append the query to displayed messages
                     st.session_state.messages.append(HumanMessage(content=user_query))
-
-                    # Append the query to chat history list
-                    chat_history.add_message(HumanMessage(content=user_query))
                     
                     # Display a temporary "processing" message
                     processing_message = st.empty()
                     processing_message.text("Processing...")
                     
-                    # Generate response using conversation chains
+                    # Generate response
                     try:
                         response = get_response(f'{root_folder}/{case_number}/vectors', user_query, which_side, party_names)
                         print(f"✅ Response: {response}")
 
-                        # Append the response to chat history
-                        chat_history.add_message(response)
-
                         #Display the message
-                        st.session_state.messages.append(AIMessage(role="AI", content=response.content))
+                        st.session_state.messages.append(response)
                         st.rerun()
-
-                        
                         
                     except Exception as ex:
                         st.error(f"Error generating response: {ex}")

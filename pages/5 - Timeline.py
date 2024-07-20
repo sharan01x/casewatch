@@ -11,11 +11,10 @@ def main():
 
     if st.session_state["authentication_status"]:
 
+        st.header("Timeline of Events")
+
         root_folder = f'casefiles/{st.session_state["username"]}'
         st.session_state.case_number = get_active_case(f'{root_folder}')
-       
-        st.header("Timeline of Events")
-        response = get_timeline(root_folder, refresh=False)
 
         with st.sidebar:
             case_numbers = get_case_numbers(root_folder)
@@ -27,6 +26,7 @@ def main():
                 if 'case_number' in st.session_state:
                     set_active_case(root_folder, st.session_state.case_number)
         
+        response = get_timeline(root_folder, False)
         col1, col2 = st.columns([4, 1])
         
         with col1:
@@ -35,12 +35,9 @@ def main():
                 st.markdown(response)
         with col2:
             if st.button("🔄 Refresh List", key="refresh_timeline"):
-                response = get_timeline(root_folder, refresh=True)
-            
-            if st.button("🗑️ Delete Timeline", key="delete_timeline"):
-                with st.spinner("Deleting..."):
-                    if delete_timeline(root_folder):
-                        st.rerun()
+                delete_timeline(root_folder)
+                response = get_timeline(root_folder, True)
+                st.rerun()
 
             if st.button("🖨️ Print List (Soon)", key="print_actors"):
                 pass

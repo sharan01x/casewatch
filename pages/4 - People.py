@@ -14,10 +14,6 @@ def main():
         st.header("People Involved")
 
         root_folder = f'casefiles/{st.session_state["username"]}'
-        vectors_folder = f'casefiles/{st.session_state["username"]}/vectors'
-        actors_file = f'casefiles/{st.session_state["username"]}/actors.md'
-
-        # Get the active case number from the JSON file
         st.session_state.case_number = get_active_case(f'{root_folder}')
 
         with st.sidebar:
@@ -35,15 +31,13 @@ def main():
         col1, col2 = st.columns([4, 1])
         
         with col1:
+            st.write("These are the people involved in the case. You can refresh the list, delete it, or print it.")
             with st.container(border=1):
                 st.markdown(response)
         with col2:
             if st.button("🔄 Refresh List", key="refresh_actors"):
-                response = get_actors(root_folder, True)
-                st.rerun()
-            
-            if st.button(" Delete", key="delete_actors"):
                 delete_actors(root_folder)
+                response = get_actors(root_folder, True)
                 st.rerun()
             
             if st.button("🖨️ Print List (Soon)", key="print_actors"):
