@@ -31,10 +31,31 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 EMBEDDINGS_MODEL = os.getenv("EMBEDDINGS_MODEL")
 USER_CONFIG_FILE = os.getenv("USER_CONFIG_FILE")
 
+# LLM provider: defaults to local Ollama (OpenAI-compatible endpoint)
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
+OLLAMA_CHAT_MODEL = os.getenv("OLLAMA_CHAT_MODEL", "qwen3.8:27b-mlx")
+OLLAMA_ECO_MODEL = os.getenv("OLLAMA_ECO_MODEL", "qwen3.8:27b-mlx")
+OLLAMA_EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", "qwen3-embedding:latest")
+
 # For main operations
-llm = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model_name="gpt-4o", temperature=0.3)
-llm_eco = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model_name="gpt-4o-mini", temperature=0.3) #Change this to something else in the future, but for now gpt-3.5-turbo is not providing the best answers
-embeddings = OpenAIEmbeddings(model=EMBEDDINGS_MODEL, api_key=OPENAI_API_KEY)
+llm = ChatOpenAI(
+    openai_api_key="ollama",  # Ollama ignores the key but OpenAI client requires one
+    model_name=OLLAMA_CHAT_MODEL,
+    temperature=0.3,
+    base_url=OLLAMA_BASE_URL,
+)
+llm_eco = ChatOpenAI(
+    openai_api_key="ollama",
+    model_name=OLLAMA_ECO_MODEL,
+    temperature=0.3,
+    base_url=OLLAMA_BASE_URL,
+)
+embeddings = OpenAIEmbeddings(
+    model=OLLAMA_EMBED_MODEL,
+    api_key="ollama",
+    base_url=OLLAMA_BASE_URL,
+    check_embedding_ctx_length=False,
+)
 vector_store = None
 
 
